@@ -41,7 +41,7 @@ class Motor_drv:
     def set_enable(self,onoff)
         self.board.write(self._pEn,onoff)
 
-    def set_velocity(self,_dir,_duty):
+    def set_velocity(self,_dir,duty):
         # set direction
         if _dir == 'F':     # forward
             self.board.write(self._pAI1,1)
@@ -56,7 +56,8 @@ class Motor_drv:
             self.board.write(self._pAI1,0)
             self.board.write(self._pAI2,0)
         # set duty
-        self.board.set_PWM_dutycycle(self._pPWM,(int)(self._drange*_duty))
+        if duty <= 1:
+            self.board.set_PWM_dutycycle(self._pPWM,(int)(self._drange*duty))
 
     def get_frequency(self,freq):
         return self._freq
