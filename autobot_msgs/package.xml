@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>autobot_msgs</name>
+  <version>0.0.1</version>
+  <description>Messages for Autobot</description>
+
+  <author email="nguyennhantinh@outlook.com">TinhNN</author>
+
+  <maintainer email="nguyennhantinh@outlook.com">TinhNN</maintainer>
+
+  <license>BSD</license>
+
+  <url type="repository">https://github.com/tinhnn/autobot_BSP_pi</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <run_depend>message_runtime</run_depend>
+  <run_depend>std_msgs</run_depend>
+
+  <export>
+  </export>
+</package>
