@@ -9,11 +9,24 @@
 /* static variable */
 int _i2c_hdl = 0x00;
 
-/* static function */
+/* prototype function */
 
+/* API function */
+
+/*******************************************************************************
+ * @Function: motor_drv_init
+ * @Brief   : board start
+ * @Param   : busID: Which bus to operate
+ *            address : Board controler address
+ * @Return  : Board handle or error code
+ *******************************************************************************
+ */
 int motor_drv_init(int busID, int address)
 {
-    ercd = 0;
+    int ercd = 0;
+    uint8_t PID_Data;
+    uint8_t VID_Data;
+    uint8_t controle_mode
     /* Init GPIO */
     ercd = gpioInitialise();
     if (ercd < 0){
@@ -24,18 +37,42 @@ int motor_drv_init(int busID, int address)
     _i2c_hdl = i2cOpen(busID, address, 0);
     if(_i2c_hdl < 0){
         /* Error log */
-        return _i2c_hdl;
+        return BOARD_STATUS_ERR;
     }
     
-    return 0;
+    /* Detect board */
+    i2cReadI2CBlockData(_i2c_hdl, REG_PID, &PID_Data, sizeof(PID_Data));
+    i2cReadI2CBlockData(_i2c_hdl, REG_VID, &VID_Data, sizeof(VID_Data));
+    if(PID_Data != REG_DEF_PID){
+        return BOARD_STATUS_ERR_DEVICE_NOT_DETECTED;
+    }
+    else{
+        /* Set board to DC motor */
+        controle_mode = MOTOR_DC;
+        i2cWriteI2CBlockData(_i2c_hdl, REG_CTRL_MODE, &controle_mode, sizeof(controle_mode));
+        /* Stop motor */
+        motor_drv_movement(_i2c_hdl, MOTOR_ALL, STOP, 0);
+        /* Disable encoder */
+        motor_drv_set_encoder_disable(_i2c_hdl, MOTOR_ALL);
+    }
+    
+    
+    return _i2c_hdl;
 }
 
+/*******************************************************************************
+ * @Function: motor_drv_deinit
+ * @Brief   : board stop
+ * @Param   : handle: Board handle
+ * @Return  : Error Code
+ *******************************************************************************
+ */
 int motor_drv_deinit(int handle)
 {
-    int ercd;
+    int ercd = 0;
     if(handle != _i2c_hdl){
         /* Not matching handle */
-        return -1;
+        return BOARD_STATUS_ERR_PARAMETER;
     }
     /* Deinit I2C */
     ercd = i2cClose(handle);
@@ -49,7 +86,15 @@ int motor_drv_deinit(int handle)
     return ercd;
 }
 
-int motor_drv_set_encoder_enable(int handle, int encID)
+/*******************************************************************************
+ * @Function: motor_drv_set_encoder_enable
+ * @Brief   : Set dc motor encoder enable
+ * @Param   : handle: Board handle
+ *            encID : Encoder list, items in range 1 to 2, or ALL
+ * @Return  : None
+ *******************************************************************************
+ */
+void motor_drv_set_encoder_enable(int handle, int encID)
 {
     char TX_Data = 1;
     uint8_t addr;
@@ -63,7 +108,15 @@ int motor_drv_set_encoder_enable(int handle, int encID)
     }
 }
 
-int motor_drv_set_encoder_disable(int handle, int encID)
+/*******************************************************************************
+ * @Function: motor_drv_set_encoder_disable
+ * @Brief   : Set dc motor encoder disable
+ * @Param   : handle: Board handle
+ *            encID : Encoder list, items in range 1 to 2, or ALL
+ * @Return  : None
+ *******************************************************************************
+ */
+void motor_drv_set_encoder_disable(int handle, int encID)
 {
     char TX_Data = 0;
     uint8_t addr;
@@ -77,19 +130,60 @@ int motor_drv_set_encoder_disable(int handle, int encID)
     }
 }
 
+/*******************************************************************************
+ * @Function: motor_drv_set_enc_reduct_ratio
+ * @Brief   : Set dc motor encoder reduction ratio
+ * @Param   : handle: board handle
+ *            encID : Encoder list, items in range 1 to 2, or ALL
+ *            reduction_ratio: Set dc motor encoder reduction ratio, range in 1 to 2000,
+ *                             (pulse per circle) = 16 * reduction_ratio * 2
+ * @Return  : Error Code
+ *******************************************************************************
+ */
+int motor_drv_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_ratio)
+{
+    uint8_t TX_Data[2];
+    if(reduction_ratio < 1 || reduction_ratio > 2000){
+        /* not support reduction ratio */
+        return BOARD_STATUS_ERR_PARAMETER;
+    }
+    
+    TX_Data[0] = (reduction_ratio>>8)&0xFF;
+    TX_Data[0] = reduction_ratio&0xFF;
+    if(encID == MOTOR_ALL){
+        i2cWriteI2CBlockData(handle, REG_ENCODER1_REDUCTION_RATIO, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER2_REDUCTION_RATIO, &TX_Data, sizeof(TX_Data));
+    }
+    else{
+        addr = REG_ENCODER1_REDUCTION_RATIO + 5*(encID-1);
+        i2cWriteI2CBlockData(handle, addr, &TX_Data, sizeof(TX_Data));
+    }
+    
+    return BOARD_STATUS_NONE;
+}
+
+/*******************************************************************************
+ * @Function: motor_drv_getspeed
+ * @Brief   : Get dc motor encoder speed, unit [rpm]
+ * @Param   : handle: board handle
+ *            encID : Encoder list, items in range 1 to 2, or ALL
+ * @Return  : encoder speed
+ *******************************************************************************
+ */
 uint16_t motor_drv_getspeed(int handle, int encID)
 {
     char RX_Data[2];
     uint8_t addr;
     uint16_t speed = 0;
-    if(encID == MOTOR_ALL){
+    if(encID < MOTOR_1 || encID > MOTOR_2){
+        // Not support get speed of all encoder
         return 0;
     }
     else{
         addr = REG_ENCODER1_SPPED + 5*(encID-1);
-        i2cReadI2CBlockData(handle, addr, &RX_Data, sizeof(TX_Data));
+        i2cReadI2CBlockData(handle, addr, &RX_Data, sizeof(RX_Data));
         speed = RX_Data[0]<<8 | RX_Data[1];
-        if(speed&0x8000){
+        if(speed & 0x8000){
             speed = -(0x10000 - speed);
         }
     }
@@ -97,7 +191,16 @@ uint16_t motor_drv_getspeed(int handle, int encID)
     return speed;
 }
 
-int motor_drv_set_PWM_freq(int handle, int frequency)
+/*******************************************************************************
+ * @Function: motor_drv_set_PWM_freq
+ * @Brief   : Set dc motor pwm frequency
+ * @Param   : handle: board handle
+ *            frequency: Frequency to set, in range 100HZ to 12750HZ, otherwise no effective
+ *                       (actual frequency) = frequency - (frequency % 50)
+ * @Return  : None
+ *******************************************************************************
+ */
+void motor_drv_set_PWM_freq(int handle, int frequency)
 {
     int ercd;
     int frq;
@@ -108,10 +211,45 @@ int motor_drv_set_PWM_freq(int handle, int frequency)
     
     frq = frequency/50;
     i2cWriteI2CBlockData(handle, REG_MOTOR_PWM, (char*)(&frq), sizeof(frq));
-    return 0;
 }
 
-int motor_drv_movement(int handle, int motorID, double orientation, double speed)
+/*******************************************************************************
+ * @Function: motor_drv_movement
+ * @Brief   : Motor movement
+ * @Param   : handle: board handle
+ *            motorID: Motor ID, items in range 1 to 2, or ALL
+ *            orientation: Motor orientation, CW (clockwise) or CCW (counterclockwise)
+ *            speed: Motor pwm duty cycle, in range 0 to 100, otherwise no effective
+ * @Return  : Error code
+ *******************************************************************************
+ */
+int motor_drv_movement(int handle, uint32_t motorID, uint32_t orientation, float speed)
 {
-    return 0;
+    uint8_t TX_Data[2];
+    if(orientation < CW || orientation > STOP){
+        return BOARD_STATUS_ERR_PARAMETER;
+    }
+    if(speed < 0 || speed > 100){
+        return BOARD_STATUS_ERR_PARAMETER;
+    }
+    
+    if(motorID == MOTOR_ALL){
+        TX_Data[0] = orientation & 0xFF;
+        i2cWriteI2CBlockData(handle, REG_MOTOR1_ORIENTATION, &TX_Data, 1);
+        i2cWriteI2CBlockData(handle, REG_MOTOR2_ORIENTATION, &TX_Data, 1);
+        TX_Data[0] = ((int)speed) & 0xFF;
+        TX_Data[1] = (speed*10)%10;
+        i2cWriteI2CBlockData(handle, REG_MOTOR1_SPEED, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_MOTOR2_SPEED, &TX_Data, sizeof(TX_Data));
+    }
+    else{
+        addr = REG_MOTOR1_ORIENTATION + 3*(encID-1);
+        TX_Data[0] = orientation & 0xFF;
+        i2cWriteI2CBlockData(handle, addr, &TX_Data, 1);
+        TX_Data[0] = ((int)speed) & 0xFF;
+        TX_Data[1] = (speed*10)%10;
+        i2cWriteI2CBlockData(handle, addr+1, &TX_Data, sizeof(TX_Data));
+    }
+    
+    return BOARD_STATUS_NONE;
 }
