@@ -80,6 +80,8 @@ int motor_drv_deinit(int handle)
         /* Error log */
         return ercd;
     }
+    /* clear handle */
+    _i2c_hdl = 0;
     
     /* Deinit GPIO */
     ercd = gpioTerminate();
