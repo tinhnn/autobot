@@ -2,7 +2,7 @@
 
 #include "motor_driver.h"
 
-#include "pigpio.h"
+#include <pigpiod_if2.h>
 #include <stdio.h>
 #include <stdint.h>
 
@@ -24,14 +24,15 @@ int _i2c_hdl = 0x00;
 int motor_drv_init(int busID, int address)
 {
     int ercd = 0;
+    uint8_t reg_pid = REG_PID;
+    uint8_t reg_pvd = REG_PVD;
     uint8_t PID_Data;
     uint8_t VID_Data;
-    uint8_t controle_mode
+    uint8_t controle_mode;
     /* Init GPIO */
-    ercd = gpioInitialise();
-    if (ercd < 0){
+    if (gpioInitialise() < 0){
         /* Error log */
-        return ercd;
+        return BOARD_STATUS_ERR;
     }
     /* Init I2C */
     _i2c_hdl = i2cOpen(busID, address, 0);
@@ -41,15 +42,15 @@ int motor_drv_init(int busID, int address)
     }
     
     /* Detect board */
-    i2cReadI2CBlockData(_i2c_hdl, REG_PID, &PID_Data, sizeof(PID_Data));
-    i2cReadI2CBlockData(_i2c_hdl, REG_VID, &VID_Data, sizeof(VID_Data));
+    i2cReadI2CBlockData(_i2c_hdl, reg_pid, (char*)(&PID_Data), sizeof(PID_Data));
+    i2cReadI2CBlockData(_i2c_hdl, reg_pvd, (char*)(&VID_Data), sizeof(VID_Data));
     if(PID_Data != REG_DEF_PID){
         return BOARD_STATUS_ERR_DEVICE_NOT_DETECTED;
     }
     else{
         /* Set board to DC motor */
         controle_mode = MOTOR_DC;
-        i2cWriteI2CBlockData(_i2c_hdl, REG_CTRL_MODE, &controle_mode, sizeof(controle_mode));
+        i2cWriteI2CBlockData(_i2c_hdl, REG_CTRL_MODE, (char*)(&controle_mode), sizeof(controle_mode));
         /* Stop motor */
         motor_drv_movement(_i2c_hdl, MOTOR_ALL, STOP, 0);
         /* Disable encoder */
@@ -84,7 +85,8 @@ int motor_drv_deinit(int handle)
     _i2c_hdl = 0;
     
     /* Deinit GPIO */
-    ercd = gpioTerminate();
+    gpioTerminate();
+    
     return ercd;
 }
 
@@ -101,12 +103,12 @@ void motor_drv_set_encoder_enable(int handle, int encID)
     char TX_Data = 1;
     uint8_t addr;
     if(encID == MOTOR_ALL){
-        i2cWriteI2CBlockData(handle, REG_ENCODER1_EN, &TX_Data, sizeof(TX_Data));
-        i2cWriteI2CBlockData(handle, REG_ENCODER2_EN, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER1_EN, (char*)(&TX_Data), sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER2_EN, (char*)(&TX_Data), sizeof(TX_Data));
     }
     else{
         addr = REG_ENCODER1_EN + 5*(encID-1);
-        i2cWriteI2CBlockData(handle, addr, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, addr, (char*)(&TX_Data), sizeof(TX_Data));
     }
 }
 
@@ -123,12 +125,12 @@ void motor_drv_set_encoder_disable(int handle, int encID)
     char TX_Data = 0;
     uint8_t addr;
     if(encID == MOTOR_ALL){
-        i2cWriteI2CBlockData(handle, REG_ENCODER1_EN, &TX_Data, sizeof(TX_Data));
-        i2cWriteI2CBlockData(handle, REG_ENCODER2_EN, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER1_EN, (char*)(&TX_Data), sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER2_EN, (char*)(&TX_Data), sizeof(TX_Data));
     }
     else{
         addr = REG_ENCODER1_EN + 5*(encID-1);
-        i2cWriteI2CBlockData(handle, addr, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, addr, (char*)(&TX_Data), sizeof(TX_Data));
     }
 }
 
@@ -145,6 +147,7 @@ void motor_drv_set_encoder_disable(int handle, int encID)
 int motor_drv_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_ratio)
 {
     uint8_t TX_Data[2];
+    uint8_t addr;
     if(reduction_ratio < 1 || reduction_ratio > 2000){
         /* not support reduction ratio */
         return BOARD_STATUS_ERR_PARAMETER;
@@ -153,12 +156,12 @@ int motor_drv_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_rat
     TX_Data[0] = (reduction_ratio>>8)&0xFF;
     TX_Data[0] = reduction_ratio&0xFF;
     if(encID == MOTOR_ALL){
-        i2cWriteI2CBlockData(handle, REG_ENCODER1_REDUCTION_RATIO, &TX_Data, sizeof(TX_Data));
-        i2cWriteI2CBlockData(handle, REG_ENCODER2_REDUCTION_RATIO, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER1_REDUCTION_RATIO, (char*)(&TX_Data), sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_ENCODER2_REDUCTION_RATIO, (char*)(&TX_Data), sizeof(TX_Data));
     }
     else{
         addr = REG_ENCODER1_REDUCTION_RATIO + 5*(encID-1);
-        i2cWriteI2CBlockData(handle, addr, &TX_Data, sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, addr, (char*)(&TX_Data), sizeof(TX_Data));
     }
     
     return BOARD_STATUS_NONE;
@@ -183,7 +186,7 @@ uint16_t motor_drv_getspeed(int handle, int encID)
     }
     else{
         addr = REG_ENCODER1_SPPED + 5*(encID-1);
-        i2cReadI2CBlockData(handle, addr, &RX_Data, sizeof(RX_Data));
+        i2cReadI2CBlockData(handle, addr, (char*)(&RX_Data), sizeof(RX_Data));
         speed = RX_Data[0]<<8 | RX_Data[1];
         if(speed & 0x8000){
             speed = -(0x10000 - speed);
@@ -202,7 +205,7 @@ uint16_t motor_drv_getspeed(int handle, int encID)
  * @Return  : None
  *******************************************************************************
  */
-void motor_drv_set_PWM_freq(int handle, int frequency)
+int motor_drv_set_PWM_freq(int handle, int frequency)
 {
     int ercd;
     int frq;
@@ -228,6 +231,7 @@ void motor_drv_set_PWM_freq(int handle, int frequency)
 int motor_drv_movement(int handle, uint32_t motorID, uint32_t orientation, float speed)
 {
     uint8_t TX_Data[2];
+    uint8_t addr = 0;
     if(orientation < CW || orientation > STOP){
         return BOARD_STATUS_ERR_PARAMETER;
     }
@@ -237,20 +241,20 @@ int motor_drv_movement(int handle, uint32_t motorID, uint32_t orientation, float
     
     if(motorID == MOTOR_ALL){
         TX_Data[0] = orientation & 0xFF;
-        i2cWriteI2CBlockData(handle, REG_MOTOR1_ORIENTATION, &TX_Data, 1);
-        i2cWriteI2CBlockData(handle, REG_MOTOR2_ORIENTATION, &TX_Data, 1);
+        i2cWriteI2CBlockData(handle, REG_MOTOR1_ORIENTATION, (char*)(&TX_Data), 1);
+        i2cWriteI2CBlockData(handle, REG_MOTOR2_ORIENTATION, (char*)(&TX_Data), 1);
         TX_Data[0] = ((int)speed) & 0xFF;
-        TX_Data[1] = (speed*10)%10;
-        i2cWriteI2CBlockData(handle, REG_MOTOR1_SPEED, &TX_Data, sizeof(TX_Data));
-        i2cWriteI2CBlockData(handle, REG_MOTOR2_SPEED, &TX_Data, sizeof(TX_Data));
+        TX_Data[1] = ((int)(speed*10))%10;
+        i2cWriteI2CBlockData(handle, REG_MOTOR1_SPEED, (char*)(&TX_Data), sizeof(TX_Data));
+        i2cWriteI2CBlockData(handle, REG_MOTOR2_SPEED, (char*)(&TX_Data), sizeof(TX_Data));
     }
     else{
-        addr = REG_MOTOR1_ORIENTATION + 3*(encID-1);
+        addr = REG_MOTOR1_ORIENTATION + 3*(motorID-1);
         TX_Data[0] = orientation & 0xFF;
-        i2cWriteI2CBlockData(handle, addr, &TX_Data, 1);
+        i2cWriteI2CBlockData(handle, addr, (char*)(&TX_Data), 1);
         TX_Data[0] = ((int)speed) & 0xFF;
-        TX_Data[1] = (speed*10)%10;
-        i2cWriteI2CBlockData(handle, addr+1, &TX_Data, sizeof(TX_Data));
+        TX_Data[1] = ((int)(speed*10))%10;
+        i2cWriteI2CBlockData(handle, addr+1, (char*)(&TX_Data), sizeof(TX_Data));
     }
     
     return BOARD_STATUS_NONE;

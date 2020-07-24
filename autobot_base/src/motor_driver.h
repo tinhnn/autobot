@@ -1,5 +1,8 @@
 /* Copyright (c) 2020 Nguyen Nhan Tinh. All rights reserved. */
 
+#include <stdio.h>
+#include <stdint.h>
+
 /* Board address: ex: 0x10 */
 #define BOARD_ADDRESS                   0x10
 
@@ -59,7 +62,7 @@ void motor_drv_set_encoder_enable(int handle, int encID);
 void motor_drv_set_encoder_disable(int handle, int encID);
 int motor_drv_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_ratio);
 uint16_t motor_drv_getspeed(int handle, int encID);
-void motor_drv_set_PWM_freq(int handle, int frequency);
+int motor_drv_set_PWM_freq(int handle, int frequency);
 int motor_drv_movement(int handle, uint32_t motorID, uint32_t orientation, float speed);
 
 
