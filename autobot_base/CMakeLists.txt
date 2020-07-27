@@ -11,7 +11,10 @@ add_compile_options(-std=c++11)
 # Find catkin packages and libraries for catkin and system dependencies
 ################################################################################
 find_package(catkin REQUIRED COMPONENTS
-  roslaunch roslint
+  roslaunch
+  roscpp
+  rospy
+  roslint
   std_msgs
 )
 
