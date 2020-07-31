@@ -1,5 +1,7 @@
 /* Copyright (c) 2020 Nguyen Nhan Tinh. All rights reserved. */
 
+#include <cstdio>
+
 #include "motor_driver.h"
 
 #ifdef _BOARD_DRF0592_
@@ -23,19 +25,19 @@ int motor_drv_deinit(int handle)
     return err;
 }
 
-int motor_drv_set_param(int handle, motor_drv_param *param)
+int motor_drv_set_param(int handle, board_param *param)
 {
     int err = 0;
     return err;
 }
 
-int motor_drv_set_speed(int handle, uint32_t encID)
+int motor_drv_get_speed(int handle, uint32_t encID)
 {
     int err = 0;
     return err;
 }
 
-int motor_drv_get_speed(int handle, uint32_t motorID, uint32_t orientation, float speed)
+int motor_drv_set_speed(int handle, motor_param *motor)
 {
     int err = 0;
     return err;

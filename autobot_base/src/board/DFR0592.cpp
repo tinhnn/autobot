@@ -207,7 +207,7 @@ uint16_t drf0592_getspeed(int handle, int encID)
  */
 int drf0592_set_PWM_freq(int handle, int frequency)
 {
-    int ercd;
+    int ercd = 0;
     int frq;
     if (frequency < 100 || frequency > 12750){
         /* not support frequency */
@@ -216,6 +216,8 @@ int drf0592_set_PWM_freq(int handle, int frequency)
     
     frq = frequency/50;
     i2cWriteI2CBlockData(handle, REG_MOTOR_PWM, (char*)(&frq), sizeof(frq));
+
+    return ercd;
 }
 
 /*******************************************************************************
