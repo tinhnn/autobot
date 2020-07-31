@@ -1,6 +1,6 @@
 /* Copyright (c) 2020 Nguyen Nhan Tinh. All rights reserved. */
 
-#include "motor_driver.h"
+#include "DRF0592.h"
 
 #include <pigpiod_if2.h>
 #include <stdio.h>
@@ -14,14 +14,14 @@ int _i2c_hdl = 0x00;
 /* API function */
 
 /*******************************************************************************
- * @Function: motor_drv_init
+ * @Function: drf0592_init
  * @Brief   : board start
  * @Param   : busID: Which bus to operate
  *            address : Board controler address
  * @Return  : Board handle or error code
  *******************************************************************************
  */
-int motor_drv_init(int busID, int address)
+int drf0592_init(int busID, int address)
 {
     int ercd = 0;
     uint8_t reg_pid = REG_PID;
@@ -52,9 +52,9 @@ int motor_drv_init(int busID, int address)
         controle_mode = MOTOR_DC;
         i2cWriteI2CBlockData(_i2c_hdl, REG_CTRL_MODE, (char*)(&controle_mode), sizeof(controle_mode));
         /* Stop motor */
-        motor_drv_movement(_i2c_hdl, MOTOR_ALL, STOP, 0);
+        drf0592_movement(_i2c_hdl, MOTOR_ALL, STOP, 0);
         /* Disable encoder */
-        motor_drv_set_encoder_disable(_i2c_hdl, MOTOR_ALL);
+        drf0592_set_encoder_disable(_i2c_hdl, MOTOR_ALL);
     }
     
     
@@ -62,13 +62,13 @@ int motor_drv_init(int busID, int address)
 }
 
 /*******************************************************************************
- * @Function: motor_drv_deinit
+ * @Function: drf0592_deinit
  * @Brief   : board stop
  * @Param   : handle: Board handle
  * @Return  : Error Code
  *******************************************************************************
  */
-int motor_drv_deinit(int handle)
+int drf0592_deinit(int handle)
 {
     int ercd = 0;
     if(handle != _i2c_hdl){
@@ -91,14 +91,14 @@ int motor_drv_deinit(int handle)
 }
 
 /*******************************************************************************
- * @Function: motor_drv_set_encoder_enable
+ * @Function: drf0592_set_encoder_enable
  * @Brief   : Set dc motor encoder enable
  * @Param   : handle: Board handle
  *            encID : Encoder list, items in range 1 to 2, or ALL
  * @Return  : None
  *******************************************************************************
  */
-void motor_drv_set_encoder_enable(int handle, int encID)
+void drf0592_set_encoder_enable(int handle, int encID)
 {
     char TX_Data = 1;
     uint8_t addr;
@@ -113,14 +113,14 @@ void motor_drv_set_encoder_enable(int handle, int encID)
 }
 
 /*******************************************************************************
- * @Function: motor_drv_set_encoder_disable
+ * @Function: drf0592_set_encoder_disable
  * @Brief   : Set dc motor encoder disable
  * @Param   : handle: Board handle
  *            encID : Encoder list, items in range 1 to 2, or ALL
  * @Return  : None
  *******************************************************************************
  */
-void motor_drv_set_encoder_disable(int handle, int encID)
+void drf0592_set_encoder_disable(int handle, int encID)
 {
     char TX_Data = 0;
     uint8_t addr;
@@ -135,7 +135,7 @@ void motor_drv_set_encoder_disable(int handle, int encID)
 }
 
 /*******************************************************************************
- * @Function: motor_drv_set_enc_reduct_ratio
+ * @Function: drf0592_set_enc_reduct_ratio
  * @Brief   : Set dc motor encoder reduction ratio
  * @Param   : handle: board handle
  *            encID : Encoder list, items in range 1 to 2, or ALL
@@ -144,7 +144,7 @@ void motor_drv_set_encoder_disable(int handle, int encID)
  * @Return  : Error Code
  *******************************************************************************
  */
-int motor_drv_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_ratio)
+int drf0592_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_ratio)
 {
     uint8_t TX_Data[2];
     uint8_t addr;
@@ -168,14 +168,14 @@ int motor_drv_set_enc_reduct_ratio(int handle, int encID, uint16_t reduction_rat
 }
 
 /*******************************************************************************
- * @Function: motor_drv_getspeed
+ * @Function: drf0592_getspeed
  * @Brief   : Get dc motor encoder speed, unit [rpm]
  * @Param   : handle: board handle
  *            encID : Encoder list, items in range 1 to 2, or ALL
  * @Return  : encoder speed
  *******************************************************************************
  */
-uint16_t motor_drv_getspeed(int handle, int encID)
+uint16_t drf0592_getspeed(int handle, int encID)
 {
     char RX_Data[2];
     uint8_t addr;
@@ -197,7 +197,7 @@ uint16_t motor_drv_getspeed(int handle, int encID)
 }
 
 /*******************************************************************************
- * @Function: motor_drv_set_PWM_freq
+ * @Function: drf0592_set_PWM_freq
  * @Brief   : Set dc motor pwm frequency
  * @Param   : handle: board handle
  *            frequency: Frequency to set, in range 100HZ to 12750HZ, otherwise no effective
@@ -205,7 +205,7 @@ uint16_t motor_drv_getspeed(int handle, int encID)
  * @Return  : None
  *******************************************************************************
  */
-int motor_drv_set_PWM_freq(int handle, int frequency)
+int drf0592_set_PWM_freq(int handle, int frequency)
 {
     int ercd;
     int frq;
@@ -219,7 +219,7 @@ int motor_drv_set_PWM_freq(int handle, int frequency)
 }
 
 /*******************************************************************************
- * @Function: motor_drv_movement
+ * @Function: drf0592_movement
  * @Brief   : Motor movement
  * @Param   : handle: board handle
  *            motorID: Motor ID, items in range 1 to 2, or ALL
@@ -228,7 +228,7 @@ int motor_drv_set_PWM_freq(int handle, int frequency)
  * @Return  : Error code
  *******************************************************************************
  */
-int motor_drv_movement(int handle, uint32_t motorID, uint32_t orientation, float speed)
+int drf0592_movement(int handle, uint32_t motorID, uint32_t orientation, float speed)
 {
     uint8_t TX_Data[2];
     uint8_t addr = 0;
@@ -259,3 +259,4 @@ int motor_drv_movement(int handle, uint32_t motorID, uint32_t orientation, float
     
     return BOARD_STATUS_NONE;
 }
+

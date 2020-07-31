@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import rospy
+#import rospy
 import time
 import utils.SSD1306 as Adafruit_SSD1306
 
@@ -9,9 +9,6 @@ from PIL import ImageDraw
 from PIL import ImageFont
 
 import subprocess
-
-from std_msgs.msg import String
-
 
 def get_ip_address(interface):
     if get_network_interface_state(interface) == 'down':
@@ -62,35 +59,36 @@ if __name__ == '__main__':
     font = ImageFont.load_default()
 
     # setup ros node
-    rospy.init_node('autobot_oled')
+    #rospy.init_node('autobot_oled')
+
+    # display IP address
+    # Draw a black filled box to clear the image.
+    draw.rectangle((0,0,width,height), outline=0, fill=0)
+
+    # Shell scripts for system monitoring from here : https://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-usage-and-cpu-load
+    #cmd = "top -bn1 | grep load | awk '{printf \"CPU Load: %.2f\", $(NF-2)}'"
+    #CPU = subprocess.check_output(cmd, shell = True )
+    cmd = "free -m | awk 'NR==2{printf \"Mem: %s/%sMB %.2f%%\", $3,$2,$3*100/$2 }'"
+    MemUsage = subprocess.check_output(cmd, shell = True )
+    cmd = "df -h | awk '$NF==\"/\"{printf \"Disk: %d/%dGB %s\", $3,$2,$5}'"
+    Disk = subprocess.check_output(cmd, shell = True )
+
+    # Write two lines of text.
+    draw.text((x, top), "eth0: " + str(get_ip_address('eth0')), font=font, fill=255)
+    
+    draw.text((x, top+8),  "wlan0: " + str(get_ip_address('wlan0')), font=font, fill=255)
+    draw.text((x, top+16), str(MemUsage.decode('utf-8')),  font=font, fill=255)
+    draw.text((x, top+25), str(Disk.decode('utf-8')),  font=font, fill=255)
+
+    # Display image.
+    disp.image(image)
+    disp.display()
+
 
     # start running
-    while not rospy.core.is_shutdown():
-            
-        # Draw a black filled box to clear the image.
-        draw.rectangle((0,0,width,height), outline=0, fill=0)
-
-        # Shell scripts for system monitoring from here : https://unix.stackexchange.com/questions/119126/command-to-display-memory-usage-disk-usage-and-cpu-load
-        #cmd = "top -bn1 | grep load | awk '{printf \"CPU Load: %.2f\", $(NF-2)}'"
-        #CPU = subprocess.check_output(cmd, shell = True )
-        cmd = "free -m | awk 'NR==2{printf \"Mem: %s/%sMB %.2f%%\", $3,$2,$3*100/$2 }'"
-        MemUsage = subprocess.check_output(cmd, shell = True )
-        cmd = "df -h | awk '$NF==\"/\"{printf \"Disk: %d/%dGB %s\", $3,$2,$5}'"
-        Disk = subprocess.check_output(cmd, shell = True )
-
-        # Write two lines of text.
-        draw.text((x, top), "eth0: " + str(get_ip_address('eth0')), font=font, fill=255)
-        
-        draw.text((x, top+8),  "wlan0: " + str(get_ip_address('wlan0')), font=font, fill=255)
-        draw.text((x, top+16), str(MemUsage.decode('utf-8')),  font=font, fill=255)
-        draw.text((x, top+25), str(Disk.decode('utf-8')),  font=font, fill=255)
-
-        # Display image.
-        disp.image(image)
-        disp.display()
-        
-        # Update ROS
-        rospy.rostime.wallsleep(1.0)
+    #while not rospy.core.is_shutdown():         
+    #    # Update ROS
+    #    rospy.rostime.wallsleep(1.0)
         
     disp.end()
 

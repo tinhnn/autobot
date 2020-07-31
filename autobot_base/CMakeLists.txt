@@ -77,7 +77,8 @@ include_directories(
   ${pigpio_INCLUDE_DIR}
 )
 
-add_executable(autobot_base src/autobot_base.c src/motor_driver.c)
+add_executable(autobot_base src/autobot_base.cpp src/motor_driver.cpp
+                            src/board/DFR0592.cpp src/board/PCA9685.cpp src/board/SSD1306.cpp)
 #add_dependencies(autobot_base ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(autobot_base ${catkin_LIBRARIES} ${pigpio_LIBRARY} ${pigpiod_if_LIBRARY} ${pigpiod_if2_LIBRARY})
 
