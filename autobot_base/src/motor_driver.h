@@ -38,7 +38,7 @@ typedef struct motor_param_t
 int motor_drv_init(int busID, int board_addr);
 int motor_drv_deinit(int handle);
 int motor_drv_set_param(int handle, board_param *param);
-int motor_drv_get_speed(int handle, uint32_t encID);
+int motor_drv_get_speed(int handle, MOTOR_ID motorID);
 int motor_drv_set_speed(int handle, motor_param *motor);
 
 

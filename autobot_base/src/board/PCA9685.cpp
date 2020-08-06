@@ -14,3 +14,17 @@ int pca9685_deinit(int handle)
     return err;
 }
 
+int pca9685_set_PWM_freq(int handle, int frequency)
+{
+    return 0;
+}
+
+int pca9685_getspeed(int handle, int encID)
+{
+    return 0;
+}
+
+int pca9685_movement(int handle, uint32_t motorID, uint32_t orientation, float speed)
+{
+    return 0;
+}

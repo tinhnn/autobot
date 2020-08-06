@@ -1,6 +1,6 @@
 /* Copyright (c) 2020 Nguyen Nhan Tinh. All rights reserved. */
 
-#include "DRF0592.h"
+#include "DFR0592.h"
 
 #include <pigpiod_if2.h>
 #include <stdio.h>

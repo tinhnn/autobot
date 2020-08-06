@@ -50,7 +50,7 @@ void cmd_vel_callback(const geometry_msgs::Twist& msg)
 // node main loop
 int main(int argc, char *argv[])
 {
-    ros::init(argc, argv, "autobot_base");
+    ros::init(argc, argv, "motor_controller");
     ros::NodeHandle nh;
     ros::NodeHandle private_nh("~");
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     // DFR0592 address = 0x10
     _motor_handle = motor_drv_init(1, PCA9685_ADDR);
 
-    ros::Subscriber sub = nh.subscribe("cmd_vel", 10, &cmd_vel_callback);
+    ros::Subscriber sub = private_nh.subscribe("cmd_vel", 10, &cmd_vel_callback);
     
     while( ros::ok() )
     {
