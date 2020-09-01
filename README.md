@@ -58,25 +58,13 @@ autobot_bringup /home/pi/catkin_ws/src/autobot_bringup
 autobot_msgs /home/pi/catkin_ws/src/autobot_msgs
 ...
 ```
-## Testing bsp
-### Using the OLED
-If you have an SSD1306 OLED, you can display system information:
+
+## Run autobot
+* Terminal 1
 ```
-$ rosrun autobot_base oled_display.py
+$ roscore
 ```
-### Using the Motor_HAT
-If you have an PCA9685 motor HAT, you can run sample:
+* Terminal 2
 ```
-$ rosrun autobot_base motor_drv.py
-```
-Another terminal, send a topic velocity:
-```
- rostopic pub /autobot_motors/cmd_vel geometry_msgs/Twist "linear:
-  x: 0.1  # linear velocity
-  y: 0.0
-  z: 0.0
-angular:
-  x: 0.0
-  y: 0.0
-  z: 0.1" # angular velocity
+$ roslaunch autobot_bringup autobot_robot.launch
 ```
